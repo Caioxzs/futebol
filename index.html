@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FUTLE — O Termo do Futebol</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0a1f14;
+      --bg-stripes: #123524;
+      --correct: #3ea34d;
+      --present: #e8b13a;
+      --absent: #33413a;
+      --gold: #ffcf3f;
+      --white: #ffffff;
+      --font-header: 'Oswald', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 40px,
+        rgba(18, 53, 36, 0.4) 40px,
+        rgba(18, 53, 36, 0.4) 80px
+      );
+      color: var(--white);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+    }
+
+    header {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(10,31,20,0.9) 100%);
+      border-bottom: 3px solid var(--gold);
+      padding: 10px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    .header-top {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-family: var(--font-header);
+      font-size: 1.8rem;
+      letter-spacing: 2px;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    .match-info {
+      background: var(--absent);
+      border: 1px solid var(--gold);
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-family: var(--font-header);
+      font-size: 1rem;
+      letter-spacing: 1px;
+      color: var(--white);
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 6px;
+      background: rgba(0,0,0,0.4);
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 207, 63, 0.3);
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: #aaa;
+      font-family: var(--font-header);
+      font-size: 0.95rem;
+      padding: 4px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--gold);
+      color: #000;
+      font-weight: bold;
+    }
+
+    #boards-container {
+      display: flex;
+      gap: 20px;
+      width: 100%;
+      max-width: 100vw;
+      padding: 10px 20px;
+      justify-content: center;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+    }
+
+    .board-wrapper {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .board-wrapper.solved {
+      opacity: 0.7;
+      border-color: var(--correct);
+    }
+
+    .row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tile {
+      width: 52px;
+      height: 52px;
+      background-color: rgba(51, 65, 58, 0.3);
+      border: 2px solid var(--absent);
+      border-radius: 6px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-header);
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      perspective: 1000px;
+      user-select: none;
+    }
+
+    .tile[data-state='active'] {
+      border-color: var(--gold);
+      animation: pop 0.1s ease-in-out;
+    }
+
+    .tile.flip {
+      animation: flipTile 0.6s ease forwards;
+    }
+
+    @keyframes flipTile {
+      0% { transform: rotateX(0deg); }
+      50% { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+
+    @keyframes pop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .tile[data-state='correct'] { background-color: var(--correct); border-color: var(--correct); }
+    .tile[data-state='present'] { background-color: var(--present); border-color: var(--present); color: #000; }
+    .tile[data-state='absent'] { background-color: var(--absent); border-color: var(--absent); }
+
+    #keyboard {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      max-width: 500px;
+      padding: 10px;
+      background: rgba(18, 53, 36, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      width: 100%;
+    }
+
+    .key {
+      flex: 1;
+      height: 48px;
+      background-color: var(--bg-stripes);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: var(--white);
+      font-family: var(--font-header);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.2s;
+    }
+
+    .key.large { flex: 1.5; font-size: 0.85rem; }
+    .key:active { transform: translateY(2px); }
+    .key[data-state='correct'] { background-color: var(--correct); }
+    .key[data-state='present'] { background-color: var(--present); color: #000; }
+    .key[data-state='absent'] { background-color: var(--absent); opacity: 0.4; }
+
+    .toast {
+      position: fixed;
+      top: 110px;
+      background: var(--gold);
+      color: #000;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-family: var(--font-header);
+      font-weight: bold;
+      letter-spacing: 1px;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      z-index: 100;
+    }
+
+    .card {
+      background: var(--bg-dark);
+      border: 2px solid var(--gold);
+      border-radius: 10px;
+      padding: 24px;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 207, 63, 0.2);
+    }
+
+    .card h2 {
+      font-family: var(--font-header);
+      color: var(--gold);
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .card .hints-list {
+      text-align: left;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-bottom: 20px;
+      color: #ddd;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card button {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-family: var(--font-header);
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div class="brand">⚽ FUTLE</div>
+      <div class="match-info" id="round-number">RODADA Nº --</div>
+    </div>
+    <div class="mode-selector">
+      <button class="mode-btn active" onclick="switchMode(1)">SOLO</button>
+      <button class="mode-btn" onclick="switchMode(2)">DUETO</button>
+      <button class="mode-btn" onclick="switchMode(4)">QUARTETO</button>
+    </div>
+  </header>
+
+  <div class="toast" id="toast"></div>
+
+  <main id="boards-container"></main>
+
+  <div id="keyboard">
+    <div class="key-row">
+      <button class="key" data-key="Q">Q</button>
+      <button class="key" data-key="W">W</button>
+      <button class="key" data-key="E">E</button>
+      <button class="key" data-key="R">R</button>
+      <button class="key" data-key="T">T</button>
+      <button class="key" data-key="Y">Y</button>
+      <button class="key" data-key="U">U</button>
+      <button class="key" data-key="I">I</button>
+      <button class="key" data-key="O">O</button>
+      <button class="key" data-key="P">P</button>
+    </div>
+    <div class="key-row">
+      <button class="key" data-key="A">A</button>
+      <button class="key" data-key="S">S</button>
+      <button class="key" data-key="D">D</button>
+      <button class="key" data-key="F">F</button>
+      <button class="key" data-key="G">G</button>
+      <button class="key" data-key="H">H</button>
+      <button class="key" data-key="J">J</button>
+      <button class="key" data-key="K">K</button>
+      <button class="key" data-key="L">L</button>
+    </div>
+    <div class="key-row">
+      <button class="key large" data-key="ENTER">ENTER</button>
+      <button class="key" data-key="Z">Z</button>
+      <button class="key" data-key="X">X</button>
+      <button class="key" data-key="C">C</button>
+      <button class="key" data-key="V">V</button>
+      <button class="key" data-key="B">B</button>
+      <button class="key" data-key="N">N</button>
+      <button class="key" data-key="M">M</button>
+      <button class="key large" data-key="BACKSPACE">⌫</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="card">
+      <h2 id="modal-title">FICHA TÉCNICA</h2>
+      <div class="hints-list" id="modal-hints"></div>
+      <button id="modal-action-btn" onclick="nextStage()">AVANÇAR DE FASE</button>
+    </div>
+  </div>
+
+  <script>
+    const DATABASE = [
+      { word: "MARTA", hint: "MARTA — Rainha do Futebol, eleita 6 vezes a melhor jogadora do mundo." },
+      { word: "CAMPO", hint: "CAMPO — O gramado onde é disputada a partida de futebol." },
+      { word: "APITO", hint: "APITO — Instrumento utilizado pelo árbitro para controlar o jogo." },
+      { word: "CANETA", hint: "CANETA — Drible clássico em que a bola passa entre as pernas do adversário." },
+      { word: "MESSI", hint: "MESSI — Lionel Messi, lendário camisa 10 argentino e multicampeão mundial." },
+      { word: "TREINO", hint: "TREINO — Preparação física e tática dos atletas antes dos jogos." },
+      { word: "FALTA", hint: "FALTA — Infração cometida sobre um jogador adversário durante a partida." },
+      { word: "PASSE", hint: "PASSE — Ato de transferir a bola para um companheiro de equipe." },
+      { word: "BANCO", hint: "BANCO — Local onde ficam os jogadores reservas e a comissão técnica." },
+      { word: "LANCE", hint: "LANCE — Qualquer jogada de destaque que ocorre durante a partida." },
+      { word: "MARCA", hint: "MARCA — Linha ou ponto do campo, como a marca da cal (pênalti)." },
+      { word: "RIVAL", hint: "RIVAL — Equipe adversária em um clássico ou confronto histórico." },
+      { word: "TRAVE", hint: "TRAVE — Estrutura metálica ou de madeira que delimita o gol." },
+      { word: "PLACA", hint: "PLACA — Placar do estádio ou placa publicitária ao redor do campo." }
+    ];
+
+    const VALID_WORDS = new Set([
+      "MARTA", "CAMPO", "APITO", "CANETA", "MESSI", "TREINO", "FALTA", "PASSE", "BANCO",
+      "LANCE", "MARCA", "RIVAL", "TRAVE", "PLACA", "AMIGO", "ANOTA", "ARENA", "ATACA",
+      "BANDA", "BARRA", "BOLA", "BRAÇO", "CABO", "CANTO", "CERTO", "CHUTE", "CLUBE",
+      "CORTE", "CRUZ", "DANÇA", "DEFESA", "DUELO", "ETAPA", "FORÇA", "GARRA",
+      "GOLAÇO", "GOLPE", "GRUPO", "HERÓI", "JOGO", "JUSTO", "LIVRE", "LUTA", "MEIA",
+      "META", "MOTOR", "NORMA", "NOTAS", "PARTE", "PEDRA", "PONTO", "PORTE", "PRATO",
+      "PROVA", "PULSO", "QUEDA", "RITMO", "RODA", "RODADA", "SALTO", "SERIE",
+      "SINAL", "SOCIO", "SORTE", "TÁTICA", "TEMPO", "TERMO", "TEXTO", "TOQUE", "TROFEU",
+      "TURMA", "UNIAO", "VALOR", "VENTO", "VERDE", "VITORIA", "ZAGA", "VOLANTE", "PONTA"
+    ]);
+
+    DATABASE.forEach(item => VALID_WORDS.add(item.word));
+
+    const FORBIDDEN_WORDS = [
+      "PORRA", "CARALHO", "PUTA", "MERDA", "BOSTA", "VADIAS", "CU", "ARROMBADO"
+    ];
+
+    const START_DATE = new Date("2026-01-01").getTime();
+    const TODAY = new Date().setHours(0,0,0,0);
+    const DAY_INDEX = Math.floor((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
+
+    let activeModeCount = 1;
+    let activeWords = [];
+    let isBoardSolved = [];
+    let currentRow = 0;
+    let currentTile = 0;
+    const maxAttempts = 6;
+    let isGameOver = false;
+
+    document.getElementById("round-number").innerText = `RODADA Nº ${DAY_INDEX + 1}`;
+
+    // OFFSET PARA QUE CADA MODO TENHA PALAVRAS TOTALMENTE DISTINTAS DA MESMA RODADA
+    function getWordForBoard(modeCount, boardIndex) {
+      let offset = 0;
+      if (modeCount === 2) offset = 1;      // Dueto pega a partir do índice +1
+      else if (modeCount === 4) offset = 3; // Quarteto pega a partir do índice +3
+      
+      const index = (DAY_INDEX + offset + boardIndex) % DATABASE.length;
+      return DATABASE[index];
+    }
+
+    function switchMode(count) {
+      activeModeCount = count;
+      
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if ((count === 1 && btn.innerText === 'SOLO') ||
+            (count === 2 && btn.innerText === 'DUETO') ||
+            (count === 4 && btn.innerText === 'QUARTETO')) {
+          btn.classList.add('active');
+        }
+      });
+
+      initGame();
+    }
+
+    function initGame() {
+      currentRow = 0;
+      currentTile = 0;
+      isGameOver = false;
+      activeWords = [];
+      isBoardSolved = Array(activeModeCount).fill(false);
+
+      for (let b = 0; b < activeModeCount; b++) {
+        activeWords.push(getWordForBoard(activeModeCount, b));
+      }
+
+      document.querySelectorAll('.key').forEach(k => k.removeAttribute('data-state'));
+
+      const container = document.getElementById("boards-container");
+      container.innerHTML = "";
+
+      for (let b = 0; b < activeModeCount; b++) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "board-wrapper";
+        wrapper.id = `board-${b}`;
+
+        for (let i = 0; i < maxAttempts; i++) {
+          const row = document.createElement("div");
+          row.className = "row";
+          for (let j = 0; j < 5; j++) {
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            row.appendChild(tile);
+          }
+          wrapper.appendChild(row);
+        }
+        container.appendChild(wrapper);
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (isGameOver) return;
+      if (e.key === "Enter") handleInput("ENTER");
+      else if (e.key === "Backspace") handleInput("BACKSPACE");
+      else if (/^[a-zA-Z]$/.test(e.key)) handleInput(e.key.toUpperCase());
+    });
+
+    document.getElementById("keyboard").addEventListener("click", (e) => {
+      if (isGameOver) return;
+      const key = e.target.closest(".key")?.dataset.key;
+      if (key) handleInput(key);
+    });
+
+    function handleInput(key) {
+      if (key === "BACKSPACE" && currentTile > 0) {
+        currentTile--;
+        for (let b = 0; b < activeModeCount; b++) {
+          if (!isBoardSolved[b]) {
+            const row = document.getElementById(`board-${b}`).children[currentRow];
+            const tile = row.children[currentTile];
+            tile.innerText = "";
+            tile.removeAttribute("data-state");
+          }
+        }
+      } else if (key === "ENTER") {
+        if (currentTile < 5) {
+          showToast("PREENCHA AS 5 LETRAS!");
+          return;
+        }
+
+        const firstUnsolved = isBoardSolved.findIndex(s => !s);
+        const row = document.getElementById(`board-${firstUnsolved}`).children[currentRow];
+        const guess = Array.from(row.children).map(t => t.innerText).join("");
+
+        if (FORBIDDEN_WORDS.includes(guess)) {
+          showToast("PALAVRA PROIBIDA!");
+          return;
+        }
+
+        if (!VALID_WORDS.has(guess)) {
+          showToast("PALAVRA INVÁLIDA!");
+          return;
+        }
+
+        checkRow();
+      } else if (/^[A-Z]$/.test(key)) {
+        if (currentTile < 5) {
+          for (let b = 0; b < activeModeCount; b++) {
+            if (!isBoardSolved[b]) {
+              const row = document.getElementById(`board-${b}`).children[currentRow];
+              const tile = row.children[currentTile];
+              tile.innerText = key;
+              tile.setAttribute("data-state", "active");
+            }
+          }
+          currentTile++;
+        }
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 2000);
+    }
+
+    function checkRow() {
+      let globalBestStates = {};
+
+      for (let b = 0; b < activeModeCount; b++) {
+        if (isBoardSolved[b]) continue;
+
+        const wrapper = document.getElementById(`board-${b}`);
+        const row = wrapper.children[currentRow];
+        const solution = activeWords[b].word.toUpperCase();
+        const guess = Array.from(row.children).map(t => t.innerText).join("");
+
+        const solutionLetters = solution.split("");
+        const result = Array(5).fill("absent");
+
+        for (let i = 0; i < 5; i++) {
+          if (guess[i] === solution[i]) {
+            result[i] = "correct";
+            solutionLetters[i] = null;
+          }
+        }
+
+        for (let i = 0; i < 5; i++) {
+          if (result[i] !== "correct" && solutionLetters.includes(guess[i])) {
+            result[i] = "present";
+            solutionLetters[solutionLetters.indexOf(guess[i])] = null;
+          }
+        }
+
+        Array.from(row.children).forEach((tile, index) => {
+          setTimeout(() => {
+            tile.classList.add("flip");
+            setTimeout(() => {
+              tile.setAttribute("data-state", result[index]);
+            }, 300);
+          }, index * 150);
+
+          const char = guess[index];
+          const state = result[index];
+          if (!globalBestStates[char] || state === "correct" || (state === "present" && globalBestStates[char] === "absent")) {
+            globalBestStates[char] = state;
+          }
+        });
+
+        if (guess === solution) {
+          isBoardSolved[b] = true;
+          setTimeout(() => {
+            wrapper.classList.add("solved");
+          }, 5 * 150 + 300);
+        }
+      }
+
+      setTimeout(() => {
+        Object.keys(globalBestStates).forEach(char => {
+          updateKeyboard(char, globalBestStates[char]);
+        });
+      }, 300);
+
+      setTimeout(() => {
+        const allSolved = isBoardSolved.every(s => s);
+        if (allSolved) {
+          endGame(true);
+        } else if (currentRow === maxAttempts - 1) {
+          endGame(false);
+        } else {
+          currentRow++;
+          currentTile = 0;
+        }
+      }, 800);
+    }
+
+    function updateKeyboard(letter, state) {
+      const key = document.querySelector(`.key[data-key="${letter}"]`);
+      if (!key) return;
+      const currentState = key.getAttribute("data-state");
+      if (currentState !== "correct") {
+        key.setAttribute("data-state", state);
+      }
+    }
+
+    function endGame(isWin) {
+      isGameOver = true;
+      setTimeout(() => {
+        const modal = document.getElementById("modal");
+        const title = document.getElementById("modal-title");
+        const hints = document.getElementById("modal-hints");
+        const btn = document.getElementById("modal-action-btn");
+
+        hints.innerHTML = "";
+
+        if (isWin) {
+          title.innerText = `VITÓRIA NO ${activeModeCount === 1 ? 'SOLO' : activeModeCount === 2 ? 'DUETO' : 'QUARTETO'}!`;
+          if (activeModeCount === 1) btn.innerText = "IR PARA O DUETO ➔";
+          else if (activeModeCount === 2) btn.innerText = "IR PARA O QUARTETO ➔";
+          else btn.innerText = "REJOGAR QUARTETO";
+        } else {
+          title.innerText = "FIM DE JOGO!";
+          btn.innerText = "TENTAR NOVAMENTE";
+        }
+
+        activeWords.forEach((item, idx) => {
+          const p = document.createElement("p");
+          p.innerHTML = `<strong>${idx + 1}.</strong> ${item.hint}`;
+          hints.appendChild(p);
+        });
+
+        modal.style.display = "flex";
+      }, 600);
+    }
+
+    function nextStage() {
+      document.getElementById("modal").style.display = "none";
+      if (isBoardSolved.every(s => s)) {
+        if (activeModeCount === 1) switchMode(2);
+        else if (activeModeCount === 2) switchMode(4);
+        else initGame();
+      } else {
+        initGame();
+      }
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
